@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "272171684075",
+    "project_id": "athenaeum-d741f",
+    "storage_bucket": "athenaeum-d741f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:272171684075:android:ee8ebad1ba6dc8162f2eae",
+        "android_client_info": {
+          "package_name": "com.ram.athenaeum"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "272171684075-0m6m8l1rkuritdcc25jer1v72btrt8rj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ram.athenaeum",
+            "certificate_hash": "e34060f7f26ec543b15c793f2444ba3027c6a214"
+          }
+        },
+        {
+          "client_id": "272171684075-simjtji58njvqdqr0oirkreph7sv40jm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfNUMI5d-yGLlDrvMYUz43apWhQHCqb4c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "272171684075-simjtji58njvqdqr0oirkreph7sv40jm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
