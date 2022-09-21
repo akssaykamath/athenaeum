@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:athenaeum/service_firebase.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 class Dashboard extends StatefulWidget {
@@ -12,14 +14,15 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  List<File> files = [];
+  List<PlatformFile> files = [];
+  UploadTask? uploadTask;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        child: Icon(files.isEmpty ? Icons.add : Icons.upload),
+        child: const Icon(Icons.add),
         onPressed: () async {
           FilePickerResult? result = await FilePicker.platform.pickFiles(
             allowMultiple: true,
@@ -28,7 +31,9 @@ class _DashboardState extends State<Dashboard> {
           );
 
           if (result != null) {
-            files = result.paths.map((path) => File(path!)).toList();
+            files = result.files
+                .map((file) => PlatformFile(name: file.name, size: file.size))
+                .toList();
             setState(() {});
           } else {
             // User canceled the picker
@@ -80,12 +85,65 @@ class _DashboardState extends State<Dashboard> {
                   itemCount: files.isEmpty ? 0 : files.length,
                   itemBuilder: (context, index) {
                     return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8.0, vertical: 4.0),
+                      margin: const EdgeInsets.symmetric(vertical: 2.0),
                       color: Colors.blue.shade50,
                       child: Row(
-                        children: const [
-                          CircleAvatar(
+                        children: [
+                          const CircleAvatar(
                             child: Icon(Icons.picture_as_pdf),
-                          )
+                          ),
+                          const SizedBox(
+                            width: 16.0,
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        files[index].name,
+                                        maxLines: 3,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  "${(files[index].size / 1000000).toStringAsFixed(2)} MB",
+                                  style: const TextStyle(
+                                    fontSize: 12.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 16.0,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              String fileName = files[index].name;
+                              final firebaseStorageDestination =
+                                  'files/${files[index].extension}';
+                              uploadTask = FirebaseService.uploadFile(
+                                  firebaseStorageDestination,
+                                  File(files[index].path.toString()));
+
+                              if(uploadTask == null) return;
+
+                              final snapShot = uploadTask!.whenComplete(() {
+                                //TODO start from here
+                              });
+                            },
+                            child: const CircleAvatar(
+                              child: Icon(Icons.upload),
+                            ),
+                          ),
                         ],
                       ),
                     );
