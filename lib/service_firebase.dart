@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class FirebaseService {
-  static UploadTask? uploadFile(String destination, File file) {
+  static Reference? uploadFile(String destination, File file) {
     try {
       final reference = FirebaseStorage.instance.ref(destination);
-      return reference.putFile(file);
+      final UploadTask uploadTask = reference.putFile(file);
+      return reference;
     } on FirebaseException catch (e) {
       return null;
     }

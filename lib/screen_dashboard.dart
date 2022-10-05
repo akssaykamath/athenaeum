@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:athenaeum/provider/google_sign_in.dart';
 import 'package:athenaeum/service_firebase.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -15,11 +18,12 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   List<PlatformFile> files = [];
-  UploadTask? uploadTask;
+
+  final firebaseStorage = FirebaseStorage.instance;
+  final user = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
@@ -51,30 +55,42 @@ class _DashboardState extends State<Dashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user!.displayName.toString().toUpperCase(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
+                InkWell(
+                  onTap: () {
+                    final provider = Provider.of<GoogleSignInProvider>(context,
+                        listen: false);
+                    provider.googleLogout();
+                  },
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user!.displayName.toString().toUpperCase(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ),
+                          ),
+                          Text(
+                            user!.email.toString(),
+                            style: const TextStyle(
+                              fontSize: 12.0,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Text(
-                      user.email.toString(),
-                      style: const TextStyle(
-                        fontSize: 12.0,
+                      const SizedBox(
+                        width: 16.0,
                       ),
-                    ),
-                  ],
+                      CircleAvatar(
+                        backgroundImage:
+                            NetworkImage(user!.photoURL.toString()),
+                      )
+                    ],
+                  ),
                 ),
-                const SizedBox(
-                  width: 16.0,
-                ),
-                CircleAvatar(
-                  backgroundImage: NetworkImage(user.photoURL.toString()),
-                )
               ],
             ),
             const SizedBox(
@@ -126,19 +142,43 @@ class _DashboardState extends State<Dashboard> {
                             width: 16.0,
                           ),
                           InkWell(
-                            onTap: () {
-                              String fileName = files[index].name;
+                            onTap: () async {
                               final firebaseStorageDestination =
                                   'files/${files[index].extension}';
-                              uploadTask = FirebaseService.uploadFile(
-                                  firebaseStorageDestination,
-                                  File(files[index].path.toString()));
+                              try {
+                                final reference = firebaseStorage
+                                    .ref(firebaseStorageDestination);
+                                final UploadTask uploadTask = reference.putFile(
+                                    File(files[index].path.toString()));
 
-                              if(uploadTask == null) return;
-
-                              final snapShot = uploadTask!.whenComplete(() {
-                                //TODO start from here
-                              });
+                                uploadTask.snapshotEvents
+                                    .listen((TaskSnapshot taskSnapshot) {
+                                  switch (taskSnapshot.state) {
+                                    case TaskState.running:
+                                      final progress = 100.0 *
+                                          (taskSnapshot.bytesTransferred /
+                                              taskSnapshot.totalBytes);
+                                      print("Upload is $progress% complete.");
+                                      break;
+                                    case TaskState.paused:
+                                      print("Upload is paused.");
+                                      break;
+                                    case TaskState.canceled:
+                                      print("Upload was canceled");
+                                      break;
+                                    case TaskState.error:
+                                      // Handle unsuccessful uploads
+                                      break;
+                                    case TaskState.success:
+                                      // Handle successful uploads on complete
+                                      // ...
+                                      break;
+                                  }
+                                });
+                              } on FirebaseException catch (e) {
+                                print('FIREBASE EXCEPTION');
+                                return;
+                              }
                             },
                             child: const CircleAvatar(
                               child: Icon(Icons.upload),
