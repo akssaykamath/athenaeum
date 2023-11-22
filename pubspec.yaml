@@ -41,9 +41,11 @@ dependencies:
   firebase_auth: ^3.8.0
   google_sign_in: ^5.4.1
   flutter_svg: ^1.1.5
+  lottie: ^2.3.2
   shared_preferences: ^2.0.15
   provider: ^6.0.3
   file_picker: ^5.0.1
+  syncfusion_flutter_pdfviewer: ^21.1.41
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +73,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

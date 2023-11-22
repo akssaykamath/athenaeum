@@ -21,6 +21,13 @@ class _DashboardState extends State<Dashboard> {
 
   final firebaseStorage = FirebaseStorage.instance;
   final user = FirebaseAuth.instance.currentUser;
+  String firebaseStorageFolder = '';
+
+  @override
+  void initState() {
+    firebaseStorageFolder = user!.uid;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +43,8 @@ class _DashboardState extends State<Dashboard> {
 
           if (result != null) {
             files = result.files
-                .map((file) => PlatformFile(name: file.name, size: file.size))
+                .map((file) => PlatformFile(
+                    name: file.name, size: file.size, path: file.path))
                 .toList();
             setState(() {});
           } else {
@@ -48,6 +56,7 @@ class _DashboardState extends State<Dashboard> {
           child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(
               height: 16.0,
@@ -96,6 +105,141 @@ class _DashboardState extends State<Dashboard> {
             const SizedBox(
               height: 16.0,
             ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text('Your Uploaded List'),
+            ),
+            Expanded(
+              child: FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc("${user!.uid}/uploadFiles")
+                    .get(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<DocumentSnapshot> snapshot) {
+                  if (snapshot.hasError) {
+                    return Text("Something went wrong");
+                  }
+
+                  if (snapshot.hasData && !snapshot.data!.exists) {
+                    return Text("Document does not exist");
+                  }
+
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    Map<String, dynamic> data =
+                        snapshot.data!.data() as Map<String, dynamic>;
+                    return ListView.builder(
+                        itemCount: files.isEmpty ? 0 : files.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 4.0),
+                            margin: const EdgeInsets.symmetric(vertical: 2.0),
+                            color: Colors.blue.shade50,
+                            child: Row(
+                              children: [
+                                const CircleAvatar(
+                                  child: Icon(Icons.picture_as_pdf),
+                                ),
+                                const SizedBox(
+                                  width: 16.0,
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              files[index].name,
+                                              maxLines: 3,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        "${(files[index].size / 1000000).toStringAsFixed(2)} MB",
+                                        style: const TextStyle(
+                                          fontSize: 12.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 16.0,
+                                ),
+                                InkWell(
+                                  onTap: () async {
+                                    try {
+                                      final reference = firebaseStorage
+                                          .ref('files/${files[index].name}');
+                                      final UploadTask uploadTask =
+                                          reference.putFile(File(
+                                              files[index].path.toString()));
+
+                                      uploadTask.snapshotEvents.listen(
+                                          (TaskSnapshot taskSnapshot) async {
+                                        switch (taskSnapshot.state) {
+                                          case TaskState.running:
+                                            final progress = 100.0 *
+                                                (taskSnapshot.bytesTransferred /
+                                                    taskSnapshot.totalBytes);
+                                            print(
+                                                "Upload is $progress% complete.");
+                                            break;
+                                          case TaskState.paused:
+                                            print("Upload is paused.");
+                                            break;
+                                          case TaskState.canceled:
+                                            print("Upload was canceled");
+                                            break;
+                                          case TaskState.error:
+                                            // Handle unsuccessful uploads
+                                            break;
+                                          case TaskState.success:
+                                            {
+                                              String downloadUrl =
+                                                  await taskSnapshot.ref
+                                                      .getDownloadURL();
+                                              await FirebaseFirestore.instance
+                                                  .collection('users')
+                                                  .doc(user!.uid)
+                                                  .collection('uploadFiles')
+                                                  .add({
+                                                files[index].name: downloadUrl
+                                              });
+                                            }
+                                            break;
+                                        }
+                                      });
+                                    } on FirebaseException catch (e) {
+                                      print('FIREBASE EXCEPTION');
+                                      return;
+                                    }
+                                  },
+                                  child: const CircleAvatar(
+                                    child: Icon(Icons.upload),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        });
+                  }
+
+                  return Text("loading");
+                },
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text('Upload List'),
+            ),
             Expanded(
               child: ListView.builder(
                   itemCount: files.isEmpty ? 0 : files.length,
@@ -143,11 +287,9 @@ class _DashboardState extends State<Dashboard> {
                           ),
                           InkWell(
                             onTap: () async {
-                              final firebaseStorageDestination =
-                                  'files/${files[index].extension}';
                               try {
                                 final reference = firebaseStorage
-                                    .ref(firebaseStorageDestination);
+                                    .ref('files/${files[index].name}');
                                 final UploadTask uploadTask = reference.putFile(
                                     File(files[index].path.toString()));
 

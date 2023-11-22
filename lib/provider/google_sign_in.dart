@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleSignInProvider extends ChangeNotifier {
   final googleSignIn = GoogleSignIn();
-  final fireStoreDB = FirebaseFirestore.instance;
+  // final fireStoreDB = FirebaseFirestore.instance;
 
   GoogleSignInAccount? _googleSignInAccount;
 
@@ -27,23 +27,23 @@ class GoogleSignInProvider extends ChangeNotifier {
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
 
-      fireStoreDB.collection('users').doc(userCredential.user!.uid);
-
-      await fireStoreDB.collection("users").get().then((event) {
-        var values = event;
-
-        for (var doc in event.docs) {
-          print("${doc.id} => ${doc.data()}");
-        }
-
-        // if (event.docs.contains(userCredential.user!.uid)) {
-        //
-        // } else {
-        //
-        // }
-
-        fireStoreDB.collection('users').doc(userCredential.user!.uid);
-      });
+      // fireStoreDB.collection('users').doc(userCredential.user!.uid);
+      //
+      // await fireStoreDB.collection("users").get().then((event) {
+      //   var values = event;
+      //
+      //   for (var doc in event.docs) {
+      //     print("${doc.id} => ${doc.data()}");
+      //   }
+      //
+      //   // if (event.docs.contains(userCredential.user!.uid)) {
+      //   //
+      //   // } else {
+      //   //
+      //   // }
+      //
+      //   fireStoreDB.collection('users').doc(userCredential.user!.uid);
+      // });
       // checkIfRegisteredUser();
       notifyListeners();
     } catch (error) {

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:js_util/js_util_wasm.dart';
+// import 'dart:js_util/js_util_wasm.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
